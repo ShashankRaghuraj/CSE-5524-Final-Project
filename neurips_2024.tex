@@ -1,0 +1,154 @@
+\documentclass{article}
+
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2024
+
+
+% ready for submission
+%\usepackage{neurips_2024}
+
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2024}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+\usepackage[final]{neurips_2024}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2024}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+
+
+\title{Project Title: Depth-Estimation Models for Various Real-World Scenes}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  Kevin Lewis\\
+  \texttt{lewis.3164@osu.edu} \\
+  \And
+  Michael Lin\\
+  \texttt{lin.3976@osu.edu} \\
+    \And
+  Shashank Raghuraj\\
+  \texttt{raghuraj.2@osu.edu} \\
+}
+
+
+\begin{document}
+
+
+\maketitle
+
+
+
+\section{Project Type}
+\textbf CVPR 2025 competition 
+
+\section{Project Introduction}
+{\color{red}
+Please give \textbf{an introduction (1-2 paragraphs)} about your project. For example, what CVPR competition you will work on, what algorithm you are going to reproduce, what set of algorithms you are going to benchmark and on which dataset, which parts of the textbook you are going to reproduce, etc. 
+
+
+Please include URL and/or reference so that I can quickly find out the corresponding references and sources. If you want to add a reference, go to Google Scholar, search for the corresponding papers, click on cite, and copy the text in BibTex into the ref.bib file. Finally, use \cite{oquab2023dinov2} to add the reference into your text. 
+If you want to add a URL, do \url{https://dinov2.metademolab.com/}.
+
+} 
+
+\section{Project Motivation}
+{\color{red}
+Please provide an motivation about why you choose to work on this project. It may be because the problem is timely, challenging, interesting, or because you want to explore it to strengthen your computer vision skills and understanding.
+} 
+
+\section{Project Plan}
+\subsection{Baseline approach}
+{\color{red}
+Please specify the first (i.e., baseline) computer vision technique or algorithm you will try for your project and why? What are the potential limitations of this approach? If it is a neural network, please specify its architecture, such as Vision Transformer (ViT), Residual neural network (ResNet), etc.
+} 
+
+\subsection{Advanced approach}
+{\color{red}
+Please specify the computer vision techniques or algorithms you will develop and/or apply beyond the baseline approach? Why do you think these advanced approaches will lead to better performance or resolve the aforementioned limitations?
+} 
+
+\subsection{Validation plan}
+{\color{red}
+How will you verify the effectiveness of your approach? This can be datasets and/or specific evaluation metrics. If there are training and test data, please specify the size, for example, 10,000 images across 10 categories. Do you have access to the data?
+}
+
+\subsection{Computational resources}
+{\color{red}
+What computational resources do you plan to use?
+}
+
+\subsection{Library, Tool, etc.}
+{\color{red}
+What will be the programming language? What will be the library or tool you plan to use (e.g., PyTorch, scikit-image)?
+}
+
+\subsection{Estimated baseline algorithm runtime}
+{\color{red}
+Please give an estimate of the baseline algorithm's training and/or test time.
+}
+
+\section{Workload}
+{\color{red}
+As mentioned in the class, the final project is 30\% of your overall grade so it must contain sufficient workload (i.e., not something you can simply complete in several hours or a day.) The workload may include reading papers, get familiar with tools, organize data, implement algorithms, trial and errors, think about new ideas, etc.
+
+Please note that you are welcome (and encouraged) to leverage any existing code and/or implementation, either as the baseline or as the building blocks of your advanced approach. It makes little sense if you keep yourself blind of the existing resources that you can leverage. 
+}
+
+
+\section{Ideal result}
+{\color{red}
+If everything is successful, what will be the outcome and result of your project, for example, achieving the best performance on CVPR 2025 competition.
+}
+
+\subsection{Insights}
+{\color{red}
+If you successful complete your final project, what will be the insights that you will gain?
+}
+
+\section{Potential Risk}
+{\color{red}
+Any potential risks that you may not complete your final project or your approach may not work? Please envision what may prevent you from completing the project. These may include your designed algorithm will not work as you expect, insufficient computational resources, etc. 
+}
+
+\section{Duplication Statement}
+{\color{red}
+If you choose a self-defined project, it is okay if it is related to your own research project (e.g., at your lab). However, you MUST write a short paragraph clearly articulating the difference between your final project and your own research project. More specifically, it is NOT allowed if you bring what you already planned to do in your own research project (before taking this class) as the final project.
+
+If you plan to reproduce an existing algorithm, please clearly specify whether there are accessible code/implementation online. If so, please clearly state how your project will not just be copying the code and rerunning it.
+}
+
+
+
+%%%% Reference
+\bibliographystyle{plain}
+\bibliography{ref}
+
+
+\end{document}
