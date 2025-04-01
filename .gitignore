@@ -92,3 +92,6 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+*.aux
+*.out
+*.synctex.gz

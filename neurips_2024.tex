@@ -34,7 +34,7 @@
 \usepackage{xcolor}         % colors
 
 
-\title{Project Title: Depth-Estimation Models for Various Real-World Scenes}
+\title{Project Title: Exploring Autoencoders with Simple Images of Shapes}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -66,7 +66,7 @@
 
 
 \section{Project Type}
-\textbf CVPR 2025 competition 
+Reproducing examples in the textbook
 
 \section{Project Introduction}
 {\color{red}
@@ -78,41 +78,60 @@ If you want to add a URL, do \url{https://dinov2.metademolab.com/}.
 
 } 
 
+In this project, we will replicate the textbook example on autoencoders, as seen here: 
+
+\url{https://visionbook.mit.edu/representation_learning.html#experiment-do-autoencoders-learn-useful-representations}
+
+
+
 \section{Project Motivation}
-{\color{red}
-Please provide an motivation about why you choose to work on this project. It may be because the problem is timely, challenging, interesting, or because you want to explore it to strengthen your computer vision skills and understanding.
-} 
+% {\color{red}
+% Please provide an motivation about why you choose to work on this project. It may be because the problem is timely, challenging, interesting, or because you want to explore it to strengthen your computer vision skills and understanding.
+% } 
+
+This project is interesting for a couple of reasons. First, the model is not too difficult itself, so we may be able to create this autoencoder without using any machine learning libraries.  This will be a useful learning tool for understanding more about how these models work behind the scenes.  Also, exploring the different things that are possible with the encoded representations (for example, animating a transition between different shapes).
 
 \section{Project Plan}
 \subsection{Baseline approach}
-{\color{red}
-Please specify the first (i.e., baseline) computer vision technique or algorithm you will try for your project and why? What are the potential limitations of this approach? If it is a neural network, please specify its architecture, such as Vision Transformer (ViT), Residual neural network (ResNet), etc.
-} 
+% {\color{red}
+% Please specify the first (i.e., baseline) computer vision technique or algorithm you will try for your project and why? What are the potential limitations of this approach? If it is a neural network, please specify its architecture, such as Vision Transformer (ViT), Residual neural network (ResNet), etc.
+% } 
+
+We will use a simple fully connected neural network as a baseline approach for our project. This is because it should be enough for our purposes, and it is simple enough that we will be able to build it ground up.  One potential limitation of this is that using a fully connected network will limit the sizes of the hidden layers.  If they were too big, the model may be too big and slow to train effectively.
 
 \subsection{Advanced approach}
-{\color{red}
-Please specify the computer vision techniques or algorithms you will develop and/or apply beyond the baseline approach? Why do you think these advanced approaches will lead to better performance or resolve the aforementioned limitations?
-} 
+% {\color{red}
+% Please specify the computer vision techniques or algorithms you will develop and/or apply beyond the baseline approach? Why do you think these advanced approaches will lead to better performance or resolve the aforementioned limitations?
+% } 
+
+Beyond this, we may add some convolutional layers to see how they impact the performance and accuracy of the model. This will allow us to have a few layers without needing to decrease layer size.  We may also add some skip connections in these early layers to emulate a ResNet, in order to explore how this chance affects accuracy.
 
 \subsection{Validation plan}
-{\color{red}
-How will you verify the effectiveness of your approach? This can be datasets and/or specific evaluation metrics. If there are training and test data, please specify the size, for example, 10,000 images across 10 categories. Do you have access to the data?
-}
+% {\color{red}
+% How will you verify the effectiveness of your approach? This can be datasets and/or specific evaluation metrics. If there are training and test data, please specify the size, for example, 10,000 images across 10 categories. Do you have access to the data?
+% }
+
+We will have a dataset of shapes with different colors, sizes, and rotations to test our network on.  We do not currently have access to this dataset, but it will be easy to generate a dataset like it.  The textbook used 64,000 images, so we will look to generate a datasest of similar size.
 
 \subsection{Computational resources}
-{\color{red}
-What computational resources do you plan to use?
-}
+% {\color{red}
+% What computational resources do you plan to use?
+% }
+
+This model will be simple enough to run on our own computers.
 
 \subsection{Library, Tool, etc.}
-{\color{red}
-What will be the programming language? What will be the library or tool you plan to use (e.g., PyTorch, scikit-image)?
-}
+% {\color{red}
+% What will be the programming language? What will be the library or tool you plan to use (e.g., PyTorch, scikit-image)?
+% }
+We will write this in Python.  The main library we use will likely be either Numpy or CuPy for fast matrix operations, though we will likely write the actual neural network code ourselves.
 
 \subsection{Estimated baseline algorithm runtime}
-{\color{red}
-Please give an estimate of the baseline algorithm's training and/or test time.
-}
+% {\color{red}
+% Please give an estimate of the baseline algorithm's training and/or test time.
+% }
+
+We are generating the dataset ourself, and since the dataset the texbook used is not too big, we can tune the size of our images so that one epoch worth of training takes about a minute.
 
 \section{Workload}
 {\color{red}
