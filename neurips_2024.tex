@@ -92,7 +92,7 @@ and
 % Please provide an motivation about why you choose to work on this project. It may be because the problem is timely, challenging, interesting, or because you want to explore it to strengthen your computer vision skills and understanding.
 % } 
 
-This project is interesting for a couple of reasons. First, the learning model does not seem too difficult itself, so we may be able to create both models without using any machine learning libraries.  This will be a useful learning tool for understanding more about how these models work behind the scenes.  Also, exploring the different things that are possible with the encoded representations (for example, animating a transition between different shapes).
+This project is interesting for a couple of reasons. First, the learning model does not seem too difficult itself, so we may be able to create both models without using any machine learning libraries.  This will be a useful learning tool for understanding more about how these models work behind the scenes.  Also, exploring the different things that are possible with the encoded representations (for example, animating a transition between different shapes with autoencoders).
 
 \section{Project Plan}
 \subsection{Baseline approach}
@@ -116,6 +116,8 @@ Beyond this, we may add some convolutional layers to see how they impact the per
 
 We will have a dataset of shapes with different colors, sizes, and rotations to test our network on.  We do not currently have access to this dataset, but it will be easy to generate a dataset like it.  The textbook used 64,000 images, so we will look to generate a datasest of similar size.
 
+Similarly to the textbook, we will do some nearest-neighbor search to validate our models.
+
 \subsection{Computational resources}
 % {\color{red}
 % What computational resources do you plan to use?
@@ -134,7 +136,7 @@ We will write this in Python.  The main library we use will likely be either Num
 % Please give an estimate of the baseline algorithm's training and/or test time.
 % }
 
-We are generating the dataset ourself, and since the dataset the texbook used is not too big, we can tune the size of our images so that one epoch worth of training takes about a minute.
+We are generating the dataset ourself, and since the dataset the texbook used is not too big, we can tune the size of our images so that one epoch worth of training takes at most a couple minutes.
 
 \section{Workload}
 {\color{red}
@@ -155,18 +157,19 @@ If you successful complete your final project, what will be the insights that yo
 }
 
 \section{Potential Risk}
-{\color{red}
-Any potential risks that you may not complete your final project or your approach may not work? Please envision what may prevent you from completing the project. These may include your designed algorithm will not work as you expect, insufficient computational resources, etc. 
-}
+% {\color{red}
+% Any potential risks that you may not complete your final project or your approach may not work? Please envision what may prevent you from completing the project. These may include your designed algorithm will not work as you expect, insufficient computational resources, etc. 
+% }
+It is possible we will have difficulty doing the calculus to get the project working. If this is too much of a problem for us, we can switch to using PyTorch, which should handle this for us.  
 
 \section{Duplication Statement}
-{\color{red}
-If you choose a self-defined project, it is okay if it is related to your own research project (e.g., at your lab). However, you MUST write a short paragraph clearly articulating the difference between your final project and your own research project. More specifically, it is NOT allowed if you bring what you already planned to do in your own research project (before taking this class) as the final project.
+% {\color{red}
+% If you choose a self-defined project, it is okay if it is related to your own research project (e.g., at your lab). However, you MUST write a short paragraph clearly articulating the difference between your final project and your own research project. More specifically, it is NOT allowed if you bring what you already planned to do in your own research project (before taking this class) as the final project.
 
-If you plan to reproduce an existing algorithm, please clearly specify whether there are accessible code/implementation online. If so, please clearly state how your project will not just be copying the code and rerunning it.
-}
+% If you plan to reproduce an existing algorithm, please clearly specify whether there are accessible code/implementation online. If so, please clearly state how your project will not just be copying the code and rerunning it.
+% }
 
-
+There are surely autodencoders and contrastive learning models online, although not on the dataset we plan on using.  We will not use these models, and we will have to create our own transformations for contrastive learning.
 
 %%%% Reference
 \bibliographystyle{plain}
