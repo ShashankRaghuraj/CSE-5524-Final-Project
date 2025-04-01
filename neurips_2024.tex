@@ -34,7 +34,7 @@
 \usepackage{xcolor}         % colors
 
 
-\title{Project Title: Exploring Autoencoders with Simple Images of Shapes}
+\title{Project Title: Exploring Representation Learning with Simple Images of Shapes}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -78,10 +78,13 @@ If you want to add a URL, do \url{https://dinov2.metademolab.com/}.
 
 } 
 
-In this project, we will replicate the textbook example on autoencoders, as seen here: 
+In this project, we will replicate the textbook examples on autoencoders and contrastive learning, as seen here: 
 
 \url{https://visionbook.mit.edu/representation_learning.html#experiment-do-autoencoders-learn-useful-representations}
 
+and 
+
+\url{https://visionbook.mit.edu/representation_learning.html#sec-representation_learning-expt_designing_embeddings_with_contrastive_learning}
 
 
 \section{Project Motivation}
@@ -89,7 +92,7 @@ In this project, we will replicate the textbook example on autoencoders, as seen
 % Please provide an motivation about why you choose to work on this project. It may be because the problem is timely, challenging, interesting, or because you want to explore it to strengthen your computer vision skills and understanding.
 % } 
 
-This project is interesting for a couple of reasons. First, the model is not too difficult itself, so we may be able to create this autoencoder without using any machine learning libraries.  This will be a useful learning tool for understanding more about how these models work behind the scenes.  Also, exploring the different things that are possible with the encoded representations (for example, animating a transition between different shapes).
+This project is interesting for a couple of reasons. First, the learning model does not seem too difficult itself, so we may be able to create both models without using any machine learning libraries.  This will be a useful learning tool for understanding more about how these models work behind the scenes.  Also, exploring the different things that are possible with the encoded representations (for example, animating a transition between different shapes).
 
 \section{Project Plan}
 \subsection{Baseline approach}
@@ -124,7 +127,7 @@ This model will be simple enough to run on our own computers.
 % {\color{red}
 % What will be the programming language? What will be the library or tool you plan to use (e.g., PyTorch, scikit-image)?
 % }
-We will write this in Python.  The main library we use will likely be either Numpy or CuPy for fast matrix operations, though we will likely write the actual neural network code ourselves.
+We will write this in Python.  The main library we use will likely be either Numpy or CuPy for fast matrix operations, though we will likely write the actual neural network code ourselves.  We may also use PyTorch if we choose to go with a machine learning library.
 
 \subsection{Estimated baseline algorithm runtime}
 % {\color{red}
