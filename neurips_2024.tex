@@ -69,22 +69,13 @@
 Reproducing examples in the textbook
 
 \section{Project Introduction}
-{\color{red}
-Please give \textbf{an introduction (1-2 paragraphs)} about your project. For example, what CVPR competition you will work on, what algorithm you are going to reproduce, what set of algorithms you are going to benchmark and on which dataset, which parts of the textbook you are going to reproduce, etc. 
-
-
-Please include URL and/or reference so that I can quickly find out the corresponding references and sources. If you want to add a reference, go to Google Scholar, search for the corresponding papers, click on cite, and copy the text in BibTex into the ref.bib file. Finally, use \cite{oquab2023dinov2} to add the reference into your text. 
-If you want to add a URL, do \url{https://dinov2.metademolab.com/}.
-
-} 
-
+{\color{black}
+In this project, our group will explore representation learning with simple images of shapes with autoencoders and contrastive learning. Representation learning allows us to automatically discover features from raw data.
 In this project, we will replicate the textbook examples on autoencoders and contrastive learning, as seen here: 
-
 \url{https://visionbook.mit.edu/representation_learning.html#experiment-do-autoencoders-learn-useful-representations}
-
 and 
-
 \url{https://visionbook.mit.edu/representation_learning.html#sec-representation_learning-expt_designing_embeddings_with_contrastive_learning}
+} 
 
 
 \section{Project Motivation}
@@ -139,21 +130,18 @@ We will write this in Python.  The main library we use will likely be either Num
 We are generating the dataset ourself, and since the dataset the texbook used is not too big, we can tune the size of our images so that one epoch worth of training takes at most a couple minutes.
 
 \section{Workload}
-{\color{red}
-As mentioned in the class, the final project is 30\% of your overall grade so it must contain sufficient workload (i.e., not something you can simply complete in several hours or a day.) The workload may include reading papers, get familiar with tools, organize data, implement algorithms, trial and errors, think about new ideas, etc.
-
-Please note that you are welcome (and encouraged) to leverage any existing code and/or implementation, either as the baseline or as the building blocks of your advanced approach. It makes little sense if you keep yourself blind of the existing resources that you can leverage. 
-}
+{\color{black}
+The workload for this project will consists of reading through examples to understand the prupose of autoencoders, and focus on the mathematical foundations they're used with. Next, we'll experiment with simple neural network implementations before diving into the primary models. The core workload will be the implementation of the model in which we will start by building a baseline fully connected network from scratch. We will spend the remainder of our time conducting experiments to evaluate the performance, accuracy, and representation quality.}
 
 
 \section{Ideal result}
-{\color{red}
-If everything is successful, what will be the outcome and result of your project, for example, achieving the best performance on CVPR 2025 competition.
+{\color{black}
+If everything is successful, the autoencoder model should be able to reconstruct shapes from their compressed form. The contrastive model should produce embeddings that shows similarities between different images. The outcome will not only be a replica of the textbook experiments but also be well optimized
 }
 
 \subsection{Insights}
-{\color{red}
-If you successful complete your final project, what will be the insights that you will gain?
+{\color{black}
+We'll first understand how autoencoders learn compressed representations and how well they preserve essential features during the reconstruction of the object. We'll also learn how to map similar images closer together in the latent space. This project will also help us learn how to build a neural network from scratch.
 }
 
 \section{Potential Risk}
