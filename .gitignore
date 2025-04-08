@@ -20,6 +20,9 @@ wheels/
 .installed.cfg
 *.egg
 
+images
+data/images
+
 # Virtual Environment
 venv/
 env/
@@ -57,7 +60,7 @@ var/
 *.code-workspace
 
 # Data files
-data/
+# data/
 datasets/
 *.csv
 *.dat
