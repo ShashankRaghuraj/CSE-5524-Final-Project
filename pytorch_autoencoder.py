@@ -206,8 +206,8 @@ train_autoencoder(model, data_loader, epochs=NUM_EPOCHS)
 torch.save(model.state_dict(), 'autoencoder.pth')
 
 
-#### CODE TO GENERATE AN ANIMATION OUT OF TWO RANDOM IMAGES
-# Pick two random images
+#### CODE TO GENERATE AN ANIMATION OUT OF SOME RANDOM IMAGES
+# Pick n random images
 
 # n = 5
 # images = [dataset[np.random.randint(0, len(dataset))].to(device) for _ in range(n)]
