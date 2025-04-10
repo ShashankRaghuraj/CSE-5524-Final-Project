@@ -98,3 +98,6 @@ temp/
 *.aux
 *.out
 *.synctex.gz
+
+epoch_*.png
+animation.gif
