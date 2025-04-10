@@ -20,7 +20,7 @@ if torch.cuda.is_available():
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
-print(device)
+print("Using device " + str(device))
 
 
 
@@ -187,22 +187,25 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 # Create a dataset and dataloader
 dataset = ImageDataset(IMAGE_DIRECTORY, NUM_IMAGES, transform=transforms.ToTensor())
 data_loader = DataLoader(dataset, batch_size=32, shuffle=True)
-# Train the model
-
-model.load_state_dict(torch.load('autoencoder.pth'))
-
-# print("Training the model...")
-# train_autoencoder(model, data_loader, epochs=NUM_EPOCHS)
-
-# # Save the model
-# torch.save(model.state_dict(), 'autoencoder.pth')
 
 
+##### LOAD IN PREEXISTING MODEL IF YOU HAVE ONE
+# model.load_state_dict(torch.load('autoencoder.pth'))
+
+##### CODE TO ACTUALLY TRAIN THE MODEL
+print("Training the model...")
+train_autoencoder(model, data_loader, epochs=NUM_EPOCHS)
+
+# Save the model
+torch.save(model.state_dict(), 'autoencoder.pth')
+
+
+### CODE TO GENERATE AN ANIMATION OUT OF TWO RANDOM IMAGES
 # Pick two random images
-im1 = dataset[np.random.randint(0, len(dataset))]
-im2 = dataset[np.random.randint(0, len(dataset))]
+# im1 = dataset[np.random.randint(0, len(dataset))]
+# im2 = dataset[np.random.randint(0, len(dataset))]
 
-im1 = im1.to(device)
-im2 = im2.to(device)
+# im1 = im1.to(device)
+# im2 = im2.to(device)
 
-create_animation(model, im1, im2, num_frames=30)
+# create_animation(model, im1, im2, num_frames=30)
