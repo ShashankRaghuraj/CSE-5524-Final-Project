@@ -34,6 +34,7 @@ REPRESENTATION_SIZE = 128
 NUM_EPOCHS= 10
 
 # Will load in `image_0.png` through `imagine_{NUM_IMAGES-1}.png`
+# If you are just trying to make an animation, you only need to load a few images
 NUM_IMAGES = 50_000
 
 
@@ -157,26 +158,31 @@ def train_autoencoder(train_model : Autoencoder, data_loader : DataLoader, epoch
                 plt.savefig(f'epoch_{epoch + 1}.png')
 
 
-# Function to create an animation from two images using the autoencoder
-def create_animation(model, im1, im2, num_frames=30):
+# Function to create an animation from a list of images (keyframes) using the autoencoder
+def create_animation(model, images, num_frames=30):
     # Create a list of frames
     import imageio
     frames = []
     with torch.no_grad():
         # Encode the images
-        encoded_im1 = model.encode(im1.unsqueeze(0))
-        encoded_im2 = model.encode(im2.unsqueeze(0))
-        for i in range(num_frames):
-            # Interpolate between the two images
-            alpha = i / (num_frames - 1)
-            interpolated = (1 - alpha) * encoded_im1 + alpha * encoded_im2
-            # Decode the interpolated image
-            decoded = model.decode(interpolated)
-            # Reshape the decoded image
-            decoded = transforms.ToPILImage()(decoded.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
-            # Save the frame
-            frames.append(decoded)
-    imageio.mimsave('animation.gif', [frames[0]] * 3 + frames + [frames[-1]] * 3 + list(reversed(frames)), fps=20, loop=0)
+        encoded_ims = [model.encode(im.unsqueeze(0)) for im in images]
+        for i in range(len(encoded_ims)):
+            encoded_im1 = encoded_ims[i]
+            encoded_im2 = encoded_ims[(i + 1) % len(encoded_ims)]
+            # Create a list of frames for the animation
+            # frames.append(images[i].cpu())
+            for j in range(num_frames):
+                # Interpolate between the two images
+                alpha = j / (num_frames - 1)
+                interpolated = (1 - alpha) * encoded_im1 + alpha * encoded_im2
+                # Decode the interpolated image
+                decoded = model.decode(interpolated)
+                # Reshape the decoded image
+                decoded = transforms.ToPILImage()(decoded.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
+                # Save the frame
+                frames.append(decoded)
+            
+    imageio.mimsave('animation.gif', frames, fps=20, loop=0)
 
 
 # Create a model
@@ -200,12 +206,10 @@ train_autoencoder(model, data_loader, epochs=NUM_EPOCHS)
 torch.save(model.state_dict(), 'autoencoder.pth')
 
 
-### CODE TO GENERATE AN ANIMATION OUT OF TWO RANDOM IMAGES
+#### CODE TO GENERATE AN ANIMATION OUT OF TWO RANDOM IMAGES
 # Pick two random images
-# im1 = dataset[np.random.randint(0, len(dataset))]
-# im2 = dataset[np.random.randint(0, len(dataset))]
 
-# im1 = im1.to(device)
-# im2 = im2.to(device)
+# n = 5
+# images = [dataset[np.random.randint(0, len(dataset))].to(device) for _ in range(n)]
 
-# create_animation(model, im1, im2, num_frames=30)
+# create_animation(model, images)
