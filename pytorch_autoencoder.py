@@ -34,7 +34,7 @@ REPRESENTATION_SIZE = 128
 NUM_EPOCHS= 10
 
 # Will load in `image_0.png` through `imagine_{NUM_IMAGES-1}.png`
-NUM_IMAGES = 100
+NUM_IMAGES = 50_000
 
 
 class ImageDataset(Dataset):
