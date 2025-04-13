@@ -9,6 +9,7 @@ import torchvision.transforms as transforms
 # matplotlib
 import matplotlib.pyplot as plt
 
+import argparse
 from PIL import Image
 import os
 from tqdm import tqdm
@@ -31,7 +32,7 @@ IMAGE_DIRECTORY = 'data/images'
 
 INPUT_DIM = IMAGE_SIZE * IMAGE_SIZE * 3
 REPRESENTATION_SIZE = 128
-NUM_EPOCHS= 10
+NUM_EPOCHS= 100
 
 # Will load in `image_0.png` through `imagine_{NUM_IMAGES-1}.png`
 # If you are just trying to make an animation, you only need to load a few images
@@ -155,7 +156,9 @@ def train_autoencoder(train_model : Autoencoder, data_loader : DataLoader, epoch
                 plt.imshow(output.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
                 plt.title(f"Epoch {epoch + 1}")
                 # Save the plot
-                plt.savefig(f'epoch_{epoch + 1}.png')
+                if not os.path.exists("decoder_output"):
+                    os.makedirs("decoder_output")
+                plt.savefig(f'"decoder_output/epoch_{epoch + 1}.png')
 
 
 # Function to create an animation from a list of images (keyframes) using the autoencoder
@@ -184,32 +187,40 @@ def create_animation(model, images, num_frames=30):
             
     imageio.mimsave('animation.gif', frames, fps=20, loop=0)
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-cm', "--checkpoint", default=None, help="Path to saved model .pth file") # save model path to autoencoder.pth
+    parser.add_argument('-t', "--train", action='store_true', help="Whether to do model training. If inference is just needed, model path should also be passed in.")
+    parser.add_argument('-sp', "--save_path", default="autoencoder.pth", help="Save path of the trained model. Default is autoencoder.pth")
+    parser.add_argument('-cl', "--contrast_loss", default="store_true", help="Whether to use contrastive loss vs MSe")
+    args = parser.parse_args()
+    
+    # Create a model
+    model = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE).to(device)
 
-# Create a model
-model = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+    # Create a dataset and dataloader
+    dataset = ImageDataset(IMAGE_DIRECTORY, NUM_IMAGES, transform=transforms.ToTensor())
+    data_loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    
+    ##### LOAD IN PREEXISTING MODEL IF YOU HAVE ONE
+    if args.checkpoint:
+        model.load_state_dict(torch.load('autoencoder.pth'))
 
-# Create a dataset and dataloader
-dataset = ImageDataset(IMAGE_DIRECTORY, NUM_IMAGES, transform=transforms.ToTensor())
-data_loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    ##### CODE TO ACTUALLY TRAIN THE MODEL
+    if args.train:
+        print("Training the model...")
+        train_autoencoder(model, data_loader, epochs=NUM_EPOCHS)
+        #torch.save(model.state_dict(), args.save_path)
+        torch.save(model.state_dict(), args.save_path)
+    else:
+        assert args.checkpoint, "No model checkpoint was passed in"
 
+    #### CODE TO GENERATE AN ANIMATION OUT OF SOME RANDOM IMAGES
+    # Pick n random images
+    
+    n = 5
+    images = [dataset[np.random.randint(0, len(dataset))].to(device) for _ in range(n)]
 
-##### LOAD IN PREEXISTING MODEL IF YOU HAVE ONE
-# model.load_state_dict(torch.load('autoencoder.pth'))
-
-##### CODE TO ACTUALLY TRAIN THE MODEL
-print("Training the model...")
-train_autoencoder(model, data_loader, epochs=NUM_EPOCHS)
-
-# Save the model
-torch.save(model.state_dict(), 'autoencoder.pth')
-
-
-#### CODE TO GENERATE AN ANIMATION OUT OF SOME RANDOM IMAGES
-# Pick n random images
-
-# n = 5
-# images = [dataset[np.random.randint(0, len(dataset))].to(device) for _ in range(n)]
-
-# create_animation(model, images)
+    create_animation(model, images)
