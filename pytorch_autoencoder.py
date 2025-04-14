@@ -24,8 +24,9 @@ else:
 print("Using device " + str(device))
 
 
-
+TEMP=1.0
 IMAGE_SIZE = 128
+BATCH_SIZE=32
 
 IMAGE_DIRECTORY = 'data/images'
 
@@ -36,7 +37,7 @@ NUM_EPOCHS= 100
 
 # Will load in `image_0.png` through `imagine_{NUM_IMAGES-1}.png`
 # If you are just trying to make an animation, you only need to load a few images
-NUM_IMAGES = 50_000
+NUM_IMAGES = 128 # 50_000
 
 
 class ImageDataset(Dataset):
@@ -54,20 +55,22 @@ class ImageDataset(Dataset):
             if os.path.isfile(img_path):
                 img = Image.open(img_path)
                 if self.transform:
-                    img = self.transform(img)
-                images.append(img)
+                    transform_img = self.transform(img)
+                to_tensor = transforms.ToTensor()
+                images.append((to_tensor(img), to_tensor(transform_img)))
         return images
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
-        return self.images[idx]
+        # Original image, transform image
+        return self.images[idx][0], self.images[idx][1]
 
 
 
 class Autoencoder(nn.Module):
-    def __init__(self, input_dim, representation_dim):
+    def __init__(self, input_dim, representation_dim, contrast_loss=False):
         self.activation_fn = nn.ReLU
         super(Autoencoder, self).__init__()
         self.encoder = nn.Sequential(
@@ -107,38 +110,68 @@ class Autoencoder(nn.Module):
             nn.ReLU(),
             nn.Tanh() # Relu + tanh to force between 0 and 1 without making it too hard to get a 0 value
         )
-        self.loss_fn = nn.MSELoss()
+        self.contrast_obj = contrast_loss
+        self.loss_fn = nn.MSELoss() if not contrast_loss else self.contrast_loss
 
     def forward(self, x):
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return decoded
+    
     def encode(self, x):
         return self.encoder(x)
     def decode(self, x):
         return self.decoder(x)
     
-    def train(self, x):
+    def train(self, x, transform_data):
         # Forward pass
         output = self.forward(x)
+
+        with torch.no_grad():
+            transform_output = self.forward(transform_data) 
+
         # Compute loss
-        loss = self.loss_fn(output, x)
+        if not self.contrast_obj:
+            loss = self.loss_fn(output, x)
+        else:
+            loss = self.loss_fn(output, x, transform_output)
         # Backward pass
         loss.backward()
         return loss.item()
     
+    def contrast_loss(self, output, x, transform_data):
+
+        with torch.no_grad():
+            # Dot prods of the output and the other data batches
+            neg_dot_mat = torch.bmm(output.view(BATCH_SIZE, 1, -1), x.view(BATCH_SIZE, -1, 1)) / TEMP
+
+            # Dot prods of the output and the transform 
+            pos_dot_mat = torch.bmm(output.view(BATCH_SIZE, 1, -1), transform_data.view(BATCH_SIZE, -1, 1)) / TEMP
+
+        print("DIM_SIZES")
+        print(neg_dot_mat.size())
+        print(pos_dot_mat.size())
+
+        return nn.MSELoss()
+
+
 
 def train_autoencoder(train_model : Autoencoder, data_loader : DataLoader, epochs):
     for epoch in range(epochs):
         total_loss = 0
-        for batch in tqdm(data_loader, leave=False):
+        for batch, transform_batch in tqdm(data_loader, leave=False):
             # Move the data to the GPU
             data = batch.to(device)
+            transform_data = transform_batch.to(device)
+
+            # print("DIM_SIZES")
+            # print(batch.size())
+            # print(transform_batch.size())
 
             optimizer.zero_grad()
             # Batch size
             # Train the model
-            loss = train_model.train(data)
+            loss = train_model.train(data, transform_data)
             total_loss += loss
             optimizer.step()
         print(f"Epoch {epoch + 1}/{epochs}, Average Loss: {total_loss / len(data_loader)}")
@@ -158,7 +191,7 @@ def train_autoencoder(train_model : Autoencoder, data_loader : DataLoader, epoch
                 # Save the plot
                 if not os.path.exists("decoder_output"):
                     os.makedirs("decoder_output")
-                plt.savefig(f'"decoder_output/epoch_{epoch + 1}.png')
+                plt.savefig(f'decoder_output/epoch_{epoch + 1}.png')
 
 
 # Function to create an animation from a list of images (keyframes) using the autoencoder
@@ -192,17 +225,17 @@ if __name__ == "__main__":
     parser.add_argument('-cm', "--checkpoint", default=None, help="Path to saved model .pth file") # save model path to autoencoder.pth
     parser.add_argument('-t', "--train", action='store_true', help="Whether to do model training. If inference is just needed, model path should also be passed in.")
     parser.add_argument('-sp', "--save_path", default="autoencoder.pth", help="Save path of the trained model. Default is autoencoder.pth")
-    parser.add_argument('-cl', "--contrast_loss", default="store_true", help="Whether to use contrastive loss vs MSe")
+    parser.add_argument('-cl', "--contrast_loss", action='store_true', help="Whether to use contrastive loss vs MSe")
     args = parser.parse_args()
     
     # Create a model
-    model = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE).to(device)
+    model = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE, contrast_loss=args.contrast_loss).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # Create a dataset and dataloader
-    dataset = ImageDataset(IMAGE_DIRECTORY, NUM_IMAGES, transform=transforms.ToTensor())
-    data_loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    dataset = ImageDataset(IMAGE_DIRECTORY, NUM_IMAGES, transform=transforms.RandomResizedCrop((IMAGE_SIZE, IMAGE_SIZE)))
+    data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
     
     ##### LOAD IN PREEXISTING MODEL IF YOU HAVE ONE
     if args.checkpoint:
