@@ -126,9 +126,7 @@ class Autoencoder(nn.Module):
     def train(self, x, transform_data):
         # Forward pass
         output = self.forward(x)
-
-        with torch.no_grad():
-            transform_output = self.forward(transform_data) 
+        transform_output = self.forward(transform_data) 
 
         # Compute loss
         if not self.contrast_obj:
@@ -250,6 +248,6 @@ if __name__ == "__main__":
     # Pick n random images
     
     n = 5
-    images = [dataset[np.random.randint(0, len(dataset))].to(device) for _ in range(n)]
+    images = [dataset[np.random.randint(0, len(dataset))][0].to(device) for _ in range(n)]
 
     create_animation(model, images)
