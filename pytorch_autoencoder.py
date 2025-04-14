@@ -24,7 +24,7 @@ else:
 print("Using device " + str(device))
 
 
-TEMP=1.0
+TEMP=0.1
 IMAGE_SIZE = 128
 BATCH_SIZE=32
 
@@ -134,25 +134,25 @@ class Autoencoder(nn.Module):
         if not self.contrast_obj:
             loss = self.loss_fn(output, x)
         else:
-            loss = self.loss_fn(output, x, transform_output)
+            loss = self.loss_fn(output, transform_output)
         # Backward pass
         loss.backward()
         return loss.item()
     
-    def contrast_loss(self, output, x, transform_data):
+    # In particular, InfoNCE loss
+    def contrast_loss(self, output, transform_output):
 
-        with torch.no_grad():
-            # Dot prods of the output and the other data batches
-            neg_dot_mat = torch.bmm(output.view(BATCH_SIZE, 1, -1), x.view(BATCH_SIZE, -1, 1)) / TEMP
+        flat_output = output.view(BATCH_SIZE, -1)
+        flat_transform = transform_output.view(BATCH_SIZE, -1)
 
-            # Dot prods of the output and the transform 
-            pos_dot_mat = torch.bmm(output.view(BATCH_SIZE, 1, -1), transform_data.view(BATCH_SIZE, -1, 1)) / TEMP
+        # Dot prods of the output and the other data batches, results in (BATCH_SIZE, BATCH_SIZE) matrix
+        neg_dot_mat = torch.matmul(flat_output, flat_transform.T) / TEMP
 
-        print("DIM_SIZES")
-        print(neg_dot_mat.size())
-        print(pos_dot_mat.size())
+        # Gather class indicies (?) flag to indicate which sample in the batch we want to maximize for
+        pos_dot = torch.arange(BATCH_SIZE).to(device)
 
-        return nn.MSELoss()
+        cross_entropy_loss = nn.CrossEntropyLoss()
+        return cross_entropy_loss(neg_dot_mat, pos_dot)
 
 
 
@@ -163,10 +163,6 @@ def train_autoencoder(train_model : Autoencoder, data_loader : DataLoader, epoch
             # Move the data to the GPU
             data = batch.to(device)
             transform_data = transform_batch.to(device)
-
-            # print("DIM_SIZES")
-            # print(batch.size())
-            # print(transform_batch.size())
 
             optimizer.zero_grad()
             # Batch size
