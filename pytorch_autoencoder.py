@@ -124,14 +124,13 @@ class Autoencoder(nn.Module):
         return self.decoder(x)
     
     def train(self, x, transform_data):
-        # Forward pass
-        output = self.forward(x)
-        transform_output = self.forward(transform_data) 
-
         # Compute loss
         if not self.contrast_obj:
+            output = self.forward(x)
             loss = self.loss_fn(output, x)
         else:
+            output = self.encode(x)
+            transform_output = self.encode(transform_data) 
             loss = self.loss_fn(output, transform_output)
         # Backward pass
         loss.backward()
@@ -168,24 +167,26 @@ def train_autoencoder(train_model : Autoencoder, data_loader : DataLoader, epoch
             loss = train_model.train(data, transform_data)
             total_loss += loss
             optimizer.step()
-        print(f"Epoch {epoch + 1}/{epochs}, Average Loss: {total_loss / len(data_loader)}")
-        # Show an example visualization on a random data
-        if epoch % 1 == 0:
-            with torch.no_grad():
-                example_data = data[0].unsqueeze(0)
-                output = train_model(example_data)
-                # Show the original image
-                plt.subplot(1, 2, 1)
-                plt.imshow(example_data.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
-                plt.title("Original Image")
-                # Show the reconstructed image, make sure to unnormalize the image
-                plt.subplot(1, 2, 2)
-                plt.imshow(output.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
-                plt.title(f"Epoch {epoch + 1}")
-                # Save the plot
-                if not os.path.exists("decoder_output"):
-                    os.makedirs("decoder_output")
-                plt.savefig(f'decoder_output/epoch_{epoch + 1}.png')
+
+        if train_model.contrast_obj:
+            print(f"Epoch {epoch + 1}/{epochs}, Average Loss: {total_loss / len(data_loader)}")
+            # Show an example visualization on a random data
+            if epoch % 1 == 0:
+                with torch.no_grad():
+                    example_data = data[0].unsqueeze(0)
+                    output = train_model(example_data)
+                    # Show the original image
+                    plt.subplot(1, 2, 1)
+                    plt.imshow(example_data.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
+                    plt.title("Original Image")
+                    # Show the reconstructed image, make sure to unnormalize the image
+                    plt.subplot(1, 2, 2)
+                    plt.imshow(output.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
+                    plt.title(f"Epoch {epoch + 1}")
+                    # Save the plot
+                    if not os.path.exists("decoder_output"):
+                        os.makedirs("decoder_output")
+                    plt.savefig(f'decoder_output/epoch_{epoch + 1}.png')
 
 
 # Function to create an animation from a list of images (keyframes) using the autoencoder
