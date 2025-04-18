@@ -19,12 +19,13 @@ from tqdm import tqdm
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    device = torch.device("mps")
 else:
     device = torch.device("cpu")
 print("Using device " + str(device))
 
 
-TEMP=0.1
 IMAGE_SIZE = 128
 BATCH_SIZE=32
 
@@ -33,11 +34,14 @@ IMAGE_DIRECTORY = 'data/images'
 
 INPUT_DIM = IMAGE_SIZE * IMAGE_SIZE * 3
 REPRESENTATION_SIZE = 128
-NUM_EPOCHS= 100
+NUM_EPOCHS= 10
 
 # Will load in `image_0.png` through `imagine_{NUM_IMAGES-1}.png`
 # If you are just trying to make an animation, you only need to load a few images
-NUM_IMAGES = 128 # 50_000
+NUM_IMAGES = 1000
+
+# Show examples of the autoencoder output while training
+SHOW_EXAMPLES = True
 
 
 class ImageDataset(Dataset):
@@ -55,9 +59,8 @@ class ImageDataset(Dataset):
             if os.path.isfile(img_path):
                 img = Image.open(img_path)
                 if self.transform:
-                    transform_img = self.transform(img)
-                to_tensor = transforms.ToTensor()
-                images.append((to_tensor(img), to_tensor(transform_img)))
+                    img = self.transform(img)
+                images.append(img)
         return images
 
     def __len__(self):
@@ -65,12 +68,12 @@ class ImageDataset(Dataset):
 
     def __getitem__(self, idx):
         # Original image, transform image
-        return self.images[idx][0], self.images[idx][1]
+        return self.images[idx]
 
 
 
 class Autoencoder(nn.Module):
-    def __init__(self, input_dim, representation_dim, contrast_loss=False):
+    def __init__(self, input_dim, representation_dim):
         self.activation_fn = nn.ReLU
         super(Autoencoder, self).__init__()
         self.encoder = nn.Sequential(
@@ -85,11 +88,11 @@ class Autoencoder(nn.Module):
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1), # 64x16x16 => 128x8x8
             self.activation_fn(),
             nn.Flatten(), # 128x8x8 => 128*8*8
-            nn.Linear(128 * 8 * 8, REPRESENTATION_SIZE), # 128*8*8 => ??
+            nn.Linear(128 * 8 * 8, representation_dim), # 128*8*8 => ??
             self.activation_fn()
         )
         self.decoder = nn.Sequential(
-            nn.Linear(REPRESENTATION_SIZE, 128 * 8 * 8), # ?? => 128*8*8
+            nn.Linear(representation_dim, 128 * 8 * 8), # ?? => 128*8*8
             self.activation_fn(),
             nn.Unflatten(1, (128, 8, 8)), # 128*8*8 => 128x8x8
             nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, output_padding=1, padding=1), # 128x8x8 => 64x16x16
@@ -110,8 +113,7 @@ class Autoencoder(nn.Module):
             nn.ReLU(),
             nn.Tanh() # Relu + tanh to force between 0 and 1 without making it too hard to get a 0 value
         )
-        self.contrast_obj = contrast_loss
-        self.loss_fn = nn.MSELoss() if not contrast_loss else self.contrast_loss
+        self.loss_fn = nn.MSELoss()
 
     def forward(self, x):
         encoded = self.encoder(x)
@@ -123,70 +125,46 @@ class Autoencoder(nn.Module):
     def decode(self, x):
         return self.decoder(x)
     
-    def train(self, x, transform_data):
+    def train(self, x):
         # Compute loss
-        if not self.contrast_obj:
-            output = self.forward(x)
-            loss = self.loss_fn(output, x)
-        else:
-            output = self.encode(x)
-            transform_output = self.encode(transform_data) 
-            loss = self.loss_fn(output, transform_output)
+        output = self.forward(x)
+        loss = self.loss_fn(output, x)
         # Backward pass
         loss.backward()
         return loss.item()
-    
-    # In particular, InfoNCE loss
-    def contrast_loss(self, output, transform_output):
-
-        flat_output = output.view(BATCH_SIZE, -1)
-        flat_transform = transform_output.view(BATCH_SIZE, -1)
-
-        # Dot prods of the output and the other data batches, results in (BATCH_SIZE, BATCH_SIZE) matrix
-        neg_dot_mat = torch.matmul(flat_output, flat_transform.T) / TEMP
-
-        # Gather class indicies (?) flag to indicate which sample in the batch we want to maximize for
-        pos_dot = torch.arange(BATCH_SIZE).to(device)
-
-        cross_entropy_loss = nn.CrossEntropyLoss()
-        return cross_entropy_loss(neg_dot_mat, pos_dot)
-
 
 
 def train_autoencoder(train_model : Autoencoder, data_loader : DataLoader, epochs):
     for epoch in range(epochs):
         total_loss = 0
-        for batch, transform_batch in tqdm(data_loader, leave=False):
+        for batch in tqdm(data_loader, leave=False):
             # Move the data to the GPU
             data = batch.to(device)
-            transform_data = transform_batch.to(device)
 
             optimizer.zero_grad()
-            # Batch size
             # Train the model
-            loss = train_model.train(data, transform_data)
+            loss = train_model.train(data)
             total_loss += loss
             optimizer.step()
 
-        if train_model.contrast_obj:
-            print(f"Epoch {epoch + 1}/{epochs}, Average Loss: {total_loss / len(data_loader)}")
-            # Show an example visualization on a random data
-            if epoch % 1 == 0:
-                with torch.no_grad():
-                    example_data = data[0].unsqueeze(0)
-                    output = train_model(example_data)
-                    # Show the original image
-                    plt.subplot(1, 2, 1)
-                    plt.imshow(example_data.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
-                    plt.title("Original Image")
-                    # Show the reconstructed image, make sure to unnormalize the image
-                    plt.subplot(1, 2, 2)
-                    plt.imshow(output.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
-                    plt.title(f"Epoch {epoch + 1}")
-                    # Save the plot
-                    if not os.path.exists("decoder_output"):
-                        os.makedirs("decoder_output")
-                    plt.savefig(f'decoder_output/epoch_{epoch + 1}.png')
+        print(f"Epoch {epoch + 1}/{epochs}, Average Loss: {total_loss / len(data_loader)}")
+        # Show an example visualization on a random data
+        if SHOW_EXAMPLES:
+            with torch.no_grad():
+                example_data = data[0].unsqueeze(0)
+                output = train_model(example_data)
+                # Show the original image
+                plt.subplot(1, 2, 1)
+                plt.imshow(example_data.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
+                plt.title("Original Image")
+                # Show the reconstructed image, make sure to unnormalize the image
+                plt.subplot(1, 2, 2)
+                plt.imshow(output.view(3, IMAGE_SIZE, IMAGE_SIZE).permute(1, 2, 0).cpu().numpy())
+                plt.title(f"Epoch {epoch + 1}")
+                # Save the plot
+                if not os.path.exists("decoder_output"):
+                    os.makedirs("decoder_output")
+                plt.savefig(f'decoder_output/epoch_{epoch + 1}.png')
 
 
 # Function to create an animation from a list of images (keyframes) using the autoencoder
@@ -217,38 +195,37 @@ def create_animation(model, images, num_frames=30):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-cm', "--checkpoint", default=None, help="Path to saved model .pth file") # save model path to autoencoder.pth
+    parser.add_argument('-lf', "--load_from", default=None, help="Load model from previously saved .pth file")
     parser.add_argument('-t', "--train", action='store_true', help="Whether to do model training. If inference is just needed, model path should also be passed in.")
     parser.add_argument('-sp', "--save_path", default="autoencoder.pth", help="Save path of the trained model. Default is autoencoder.pth")
-    parser.add_argument('-cl', "--contrast_loss", action='store_true', help="Whether to use contrastive loss vs MSe")
     args = parser.parse_args()
     
     # Create a model
-    model = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE, contrast_loss=args.contrast_loss).to(device)
+    model = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # Create a dataset and dataloader
-    dataset = ImageDataset(IMAGE_DIRECTORY, NUM_IMAGES, transform=transforms.RandomResizedCrop((IMAGE_SIZE, IMAGE_SIZE)))
+    dataset = ImageDataset(IMAGE_DIRECTORY, NUM_IMAGES, transform=transforms.ToTensor())
     data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
     
     ##### LOAD IN PREEXISTING MODEL IF YOU HAVE ONE
-    if args.checkpoint:
-        model.load_state_dict(torch.load('autoencoder.pth'))
+    if args.load_from:
+        print("Loading model from checkpoint...")
+        model.load_state_dict(torch.load(args.load_from))
 
     ##### CODE TO ACTUALLY TRAIN THE MODEL
     if args.train:
         print("Training the model...")
         train_autoencoder(model, data_loader, epochs=NUM_EPOCHS)
-        #torch.save(model.state_dict(), args.save_path)
         torch.save(model.state_dict(), args.save_path)
     else:
-        assert args.checkpoint, "No model checkpoint was passed in"
+        assert args.load_from, "No model was passed in"
 
     #### CODE TO GENERATE AN ANIMATION OUT OF SOME RANDOM IMAGES
     # Pick n random images
     
     n = 5
-    images = [dataset[np.random.randint(0, len(dataset))][0].to(device) for _ in range(n)]
+    images = [dataset[np.random.randint(0, len(dataset))].to(device) for _ in range(n)]
 
     create_animation(model, images)

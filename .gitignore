@@ -99,5 +99,6 @@ temp/
 *.out
 *.synctex.gz
 
-epoch_*.png
-animation.gif
+similar_images
+encoder_output
+decoder_output
