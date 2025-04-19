@@ -97,15 +97,18 @@ class ContrastiveEncoder(nn.Module):
             nn.Flatten(), # 2x1x1 => 2
             nn.Tanh()
         )
-        self.triplet_loss = nn.TripletMarginLoss(margin=MARGIN)
 
     def contrast_loss(self, output, transform_output):
         # Calculate the triplet loss
         # Generate x- by rotating the output (comparing every element to some other random element)
         rand_roll = np.random.randint(1, len(output))
         output_minus = torch.roll(output, shifts=-rand_roll, dims=0)
-        return self.triplet_loss(output, transform_output, output_minus)
+        # Calculate triplet loss directly
 
+        positive_pair_distance = F.pairwise_distance(output, transform_output)
+        negative_pair_distance = F.pairwise_distance(output, output_minus)
+        loss = positive_pair_distance - negative_pair_distance + MARGIN
+        return torch.clamp(loss, min=0).mean()
 
 
     def forward(self, x):
