@@ -38,7 +38,7 @@ NUM_EPOCHS= 10
 
 # Will load in `image_0.png` through `imagine_{NUM_IMAGES-1}.png`
 # If you are just trying to make an animation, you only need to load a few images
-NUM_IMAGES = 1000
+NUM_IMAGES = 50_000
 
 # Show examples of the autoencoder output while training
 SHOW_EXAMPLES = True
