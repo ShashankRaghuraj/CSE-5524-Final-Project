@@ -6,10 +6,8 @@
 % before loading neurips_2025
 
 
-\PassOptionsToPackage{numbers, square}{natbib}
 
 % ready for submission
-\usepackage[preprint]{neurips_2025}
 
 % to compile a preprint version, e.g., for submission to arXiv, add add the
 % [preprint] option:
@@ -19,10 +17,11 @@
 % to compile a camera-ready version, add the [final] option, e.g.:
 %     \usepackage[final]{neurips_2025}
 
+\PassOptionsToPackage{numbers, square}{natbib}
+\usepackage[final]{neurips_2025}
 
-% to avoid loading the natbib package, add option nonatbib:
-%    \usepackage[nonatbib]{neurips_2025}
-
+% % to avoid loading the natbib package, add option nonatbib:
+% \usepackage[nonatbib]{neurips_2025}
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -34,12 +33,13 @@
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
 \usepackage{amsmath}
+\usepackage{wrapfig}
 % \usepackage[square,numbers]{natbib}
 \bibliographystyle{abbrvnat}
 
 \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
 
-\title{Autoencoders for Image Reconstruction and Contrastive Learning}
+\title{Exploring Representation Learning with Simple Images of Shapes}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -75,397 +75,147 @@
 
 \begin{document}
 
-
 \maketitle
 
 \begin{abstract}
-  The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on
-  both the left- and right-hand margins. Use 10~point type, with a vertical
-  spacing (leading) of 11~points.  The word \textbf{Abstract} must be centered,
-  bold, and in point size 12. Two line spaces precede the abstract. The abstract
-  must be limited to one paragraph.
+
+Directly applying machine learning algorithms to the image domain is ineffective due to the sparsity of signal in data. We explore the effectiveness of representation learning using autoencoder applied to a dataset of simple shapes with different properties, with the goal of enabling a neural network to learn useful, compact representations. We also extend our experiments using contrastive learning to further allow learning property-invariant embeddings. We find that our trained model indeed is able to accomplish our desired objectives, and further discuss the background and results within this report.
+
 \end{abstract}
 
 
 \section{Introduction}
 
 \begin{figure}[ht]
-\vskip 0in
-\begin{center}
+% \centering
 \centerline{\includegraphics[width=\columnwidth]{autoencoder.png}}
-\caption{A digram of image reconstruction using Autoencoders, taken from \cite{foundationsCVbook}. The encoder learns to compress the image into a smaller feature vector, while the decoder learns to to reconstruct the original image using this representation. The goal is to reconstruct the original image as closely as possible.}\label{autoencoder}
-\end{center}
+\caption{A digram of image reconstruction using Autoencoders, taken from \cite{foundationsCVbook}. The encoder learns to compress the image into a smaller feature vector, while the decoder learns to to reconstruct the original image using this representation. The goal is to reconstruct the original image as closely as possible.}\label{fig:autoencoder}
 % \vskip 0.5in
 \end{figure} 
 
-Image understanding is useful for many machine learning applications such as classification or generation. Raw image data however is high-dimensional and contains sparse signal, which can lead to low performance when using traditional ML models. In this paper we study a class of neural networks called Autoencoders \cite{foundationsCVbook}, which are designed to compress images through an encoder and reconstruct the original image through a decoder. We further investigate the effectiveness of contrastive learning \cite{foundationsCVbook} with the goal of training the encoder to produce representations that are invariant to fixed transformations, such as the shape of objects or their colors.
+Image understanding is useful for many machine learning applications such as classification or generation. Raw image data however is high-dimensional and contains sparse signal, which can lead to poor convergence when training naively. In this paper we study a class of neural networks called Autoencoders \cite{foundationsCVbook}, which are designed to compress images through an encoder and reconstruct the original image through a decoder \ref{fig:autoencoder}. The main goal is to get the encoder to learn useful representations of the original image that preserve most of the signal in a lower dimensional space. We further investigate the effectiveness of contrastive learning \cite{foundationsCVbook} with the goal of training the encoder to produce representations that are invariant to fixed transformations, such as the shape of objects or their colors. This project type aims to recreate both the autoencoder and contrastive learning experiments contained in Chapter 30 of the Computer Vision textbook \cite{foundationsCVbook}.
 
-\section{Problem Formulation}
+\section{Motivation}
 
-  Consider a dataset of points $\mathbf{x} \in \mathbb{R}^N$. 
+Consider a dataset of points $\mathbf{x} \in \mathbb{R}^N$. 
 
-  \textbf{For Image Reconstruction}, given datapoints $\mathbf{x} \in \mathbb{R}^M$ draw from some distribution, we are given encoder $f: \mathbb{R}^N \to \mathbb{R}^M$, decoder $g : \mathbb{R}^M \to \mathbb{R}^N$, where $N << M$. Our goal is to then learn $f^*, g^*$ such that 
+\textbf{For Image Reconstruction}, given datapoints $\mathbf{x} \in \mathbb{R}^M$ draw from some distribution, we are given encoder $f: \mathbb{R}^N \to \mathbb{R}^M$, decoder $g : \mathbb{R}^M \to \mathbb{R}^N$, where $N << M$. Our goal is to then learn $f^*, g^*$ such that 
 
-    \[ f^*, g^* = \underset{f, g}{\text{argmax}} \mathbb{E}_{\textbf{x}} \norm{ g(f(\textbf{x})) - \textbf{x}}^2_2 \]
+\[ f^*, g^* = \underset{f, g}{\text{argmax}} \mathbb{E}_{\textbf{x}} \norm{ g(f(\textbf{x})) - \textbf{x}}^2_2 \]
 
-  from $\cite{foundationsCVbook}$. Initutively, we should expect our encoder $f(\textbf{x}) = \textbf{z}$ to learn a useful representation $\textbf{z} \in \mathbb{R}^M$ that retains most of the information in the original image. We then want $g(\textbf{z}) = \hat{ \textbf{x} }$ to learn how how to use this representation to reconstruct the original image.
-  
-  \textbf{For Contrastive Learning}, given some datapoint $\mathbf{x} \in \mathbb{R}^d$, similar (positive) datapoints $\mathbf{x}^+$, and disimilar (negative) datapoints $\mathbf{x}^-$, we aim to minimize $D(\textbf{x}, \textbf{x}^+)$ and maximize $D(\textbf{x}, \textbf{x}^-)$, where $D$ is some distance function. In practice, we may take $\textbf{x}^+ = T(\textbf{x})$, where $T$ is a chosen transformation applied to our dataset (e.g. cropping) to preserve certain features, while $\textbf{x}^-$ may be randomly sampled from our dataset \cite{foundationsCVbook}. 
+from $\cite{foundationsCVbook}$. Initutively, we should expect our encoder $f(\textbf{x}) = \textbf{z}$ to learn a useful representation $\textbf{z} \in \mathbb{R}^M$ that retains most of the information in the original image. We then want $g(\textbf{z}) = \hat{ \textbf{x} }$ to learn how how to use this representation to reconstruct the original image. We can then use networks we can then use it for data compression and interpolation, or to study the feature learning capabilites of neural nets directly.
 
-\section{Methodology}
+\begin{wrapfigure}{r}{0.5\textwidth}
+\includegraphics[scale=0.70]{contrastive_learning.png}
+\caption{A digram of contrastive learning taken from \cite{foundationsCVbook}. Here the cropping transformation helps the encoder to produce embeddings that are close to each other if they share the same color.}\label{fig:contrast_learn}
+% \end{center}
+% \vskip 0.5in
+\end{wrapfigure}
 
-  We first 
+
+\textbf{For Contrastive Learning}, given some datapoint $\mathbf{x} \in \mathbb{R}^d$, similar (positive) datapoints $\mathbf{x}^+$, and disimilar (negative) datapoints $\mathbf{x}^-$, we aim to minimize $D(\textbf{x}, \textbf{x}^+)$ and maximize $D(\textbf{x}, \textbf{x}^-)$, where $D$ is some distance function \ref{fig:contrast_learn}. In practice, we may take $\textbf{x}^+ = T(\textbf{x})$, where $T$ is a chosen transformation applied to our dataset (e.g. cropping) to preserve certain features, while $\textbf{x}^-$ may be randomly sampled from our dataset \cite{foundationsCVbook}. Compared to simply taking the encoder from image reconstruction, contrastive learning helps our encoder learn to produce embeddings that are clustered by common features determined our transformation. This is useful, for instance, if we want our encoder to cluster images based on specific properties like shape or color - using image construction only does not guarentee that our encoder will be invariant to transformation. 
+
+\section{Approach}
+
+\subsection{Image Reconstruction}
+
+\subsubsection{Baseline}
+We first experimented with a fully connected multi-layer-perceptron as our autoencoder baseline. We noticed several issues when trying to train it however, namely poor convergence and that the images produced were unsmooth. Due to the extremely poor performance of this baseline, we omit the results from this final report.
+
+\subsubsection{Advanced}
+
+For image reconstruction, we next tried using a convolution neural network for both the encoder and decoder. We chose this approach due to the fact that CNNs are more naturally suited to image tasks, due to the sparsity of signal on image data specifically (as discussed in class). Our encoder first downsamples the image data into a representation of $M$ size using convolution, while the decoder upsamples the representation through multiple transposed convolutional layers. We choose our loss to be MSE between the original and reconstructed data point.
+
+\subsection{Contrastive Learning}
+
+\subsubsection{Baseline}
+After building a convolutional encoder from our Image Reconstruction experiments, we then experimented with training our encoder using InfoNCE loss for a given image transformation. However, we found that using InfoNCE was very inconsistent for our dataset, and sometimes lead model training to fail to converge. 
+
+\subsubsection{Advanced}
+
+We then pivoted toward using triplet loss instead, which defined as 
+
+\[ \mathcal{L} (\textbf{x}, \textbf{x}^+, \textbf{x}^-) = \max(D(f(\textbf{x}), f(\textbf{x}^+)) - D(f(\textbf{x}), f(\textbf{x}^-)) + m, 0) \]
+
+where $f$ is our autoencoder, $D$ is our distance function, and $m$ is our margin \cite{foundationsCVbook}. We use the $\ell2$ norm is our $D$ function in our experiments.
+
+We find using triplet loss was much faster and more consistent. We believe that the better performance of triplet loss is due to the fact that InfoNCE uses dot product to compute distances between vectors, which becomes problematic when a lot of the image has no values (e.g empty regions).
+
+\subsection{Libraries and Resources}
+
+We primarily use the torch and torchvision libraries to import our dataloader and dataset objects, as well as transforms, model components, etc. We also use the pillow library to work with images, and matplotlib for visualizations.
+
+As our models are relatively small, we are able to successfully train our model on our local devices without much issue.
 
 \section{Experiments}
 
-To evaluate the performance of our autoencoder, we first generate a dataset of 50,000 images of simple shapes (e.g. triangles, circles, squares) of different colors, sizes, and orientation, and save them using the Pillow library. 
+\subsection{Data}
+To evaluate the performance of our autoencoder, we first generate a dataset of 50,000 128x128 images of single, simple shapes (e.g. triangles, circles, squares) of different colors, sizes, and orientation, and save them using the Pillow library. 
 
+In our models, we set $M = 128$ as the dimension for our encoder output embedding. We also use the the Adam optimizer with learning rate $0.001$, and train for $100$ epochs with a batch size of $32$ for both experiments. 
 
-Papers to be submitted to NeurIPS 2025 must be prepared according to the
-instructions presented here. Papers may only be up to {\bf nine} pages long,
-including figures.
-% Additional pages \emph{containing only acknowledgments and references} are allowed.
-Additional pages \emph{containing references, checklist, and the optional technical appendices} do not count as content pages.
-Papers that exceed the page limit will not be
-reviewed, or in any other way considered for presentation at the conference.
+\subsection{Metric} We also use the training loss directly to measure the performance our of models, and qualitative analysis to estimate the final results. For Image reconstruction, we simply compare the reconstructed image with the original image. For contrastive learning, for any output embedding we find the nearest 5 embeddings within the dataset. For contrastive learning we also experiment with two types of transformations: cropping and recoloring the shapes within an image. The main aim of these transformations is to learn embeddings that are invariant to color and shape, respectively. As such, we primarily do qualitative analysis based on human judgement.
 
+\subsection{Results}
 
-The margins in 2025 are the same as those in previous years.
+\subsubsection{Image Reconstruction}
 
+\begin{wrapfigure}{r}{0.5\textwidth}
+\includegraphics[scale=0.5]{autoencoder_results.png}
+\caption{Example output from our autoencoder. The reconstructed image strongly resembles the input image, minus some smoothed edges}\label{fig:autoencoder_res} 
+% \end{center}
+% \vskip 0.5in
+\end{wrapfigure}
 
-Authors are required to use the NeurIPS \LaTeX{} style files obtainable at the
-NeurIPS website as indicated below. Please make sure you use the current files
-and not previous versions. Tweaking the style files may be grounds for
-rejection.
+In our autoencoder, we set our encoder to use 5 layers of convolution + nonlinearity, and our decoder to use 4 layers of tranposed convolution blocks (see codebase for more details). We use the MSE loss in this scenario.
 
+For image reconstruction, we are able to achieve a reconstruction loss of $\leq 0.002$, despite compressing the image to a much smaller embedding. We are also able to visually inspect the output images and see that they strongly resemble the original iamge, as in \ref{fig:autoencoder_res}. We also interpolate the learning process in the autoencoder and see that it is able to smoothly learn features from different images; we omit a diagram in this report due to the inability to import GIF files into pdf, but include it in our slides.
 
-\subsection{Retrieval of style files}
+\subsubsection{Contrastive Learning}
 
+For contrastive learning, we use 7 layers of convolutions in our encoder and remove the last MLP. We also use the triplet loss of temperature of $0.5$ and a margin of $0.3$ after some hyperparameter testing; we find our baseline approach using InfoNCE to be too weak to gather tangible results. For each experiment, we form positive samples $\textbf{x}^+ = T(\textbf{x})$ for some fixed transformation $T$, and find negative samples by sampling iid from the same batch.
 
-The style files for NeurIPS and other conference information are available on
-the website at
-\begin{center}
-  \url{https://neurips.cc}
-\end{center}
-The file \verb+neurips_2025.pdf+ contains these instructions and illustrates the
-various formatting requirements your NeurIPS paper must satisfy.
+\begin{figure}[ht]
+% \centering
+\centerline{\includegraphics[scale=0.7]{contrastive_scatter.png}}
+\caption{A scatterplot of output embeddings of the encoder, where $T$ is a random crop. Each dot represents the actual color of the shape in each image. Using the cropping transformation, our encoder learns to cluster images of similar colors into distinct regions.}\label{fig:contrastive_scatter}
+% \vskip 0.5in
+% \vskip 0.5in
+\end{figure} 
 
+  
 
-The only supported style file for NeurIPS 2025 is \verb+neurips_2025.sty+,
-rewritten for \LaTeXe{}.  \textbf{Previous style files for \LaTeX{} 2.09,
-  Microsoft Word, and RTF are no longer supported!}
+We first experiment with contrastive learning using cropping transformation. As noted in \cite{foundationsCVbook}, this simple transformation is sufficent to enable the encoder to learn to produce color-invariant embeddings. We verify the findings in the book and plot our results as in \ref{fig:contrastive_scatter}, and note that our encoder naturally seperates images of distinct colors into distinct regions.
 
+We note however that the delineation is not necessarily seperable for certain colors, nor do colors cluster smoothly with respect to each other. For instance, we see yellows clustered together, but that some yellows are closer to blue than green despite yellow being a direct component in green. We hypothesize this is due to the fact that the positive samples are only chosen up to cropping of the same image, and so the model does not necessarily need to learn to cluster different colors relative to each other. We leave learning such representations as an extension for future work. 
 
-The \LaTeX{} style file contains three optional arguments: \verb+final+, which
-creates a camera-ready copy, \verb+preprint+, which creates a preprint for
-submission to, e.g., arXiv, and \verb+nonatbib+, which will not load the
-\verb+natbib+ package for you in case of package clash.
 
+\begin{figure}[ht]
+% \centering
+\centerline{\includegraphics[scale=0.45]{contrast_learning_transforms.png}}
+\caption{Side by side comparison of the $k$-nearest neighbors (row) to an input image (dotted boxes) in the output representation space. As seen on the left, under cropping the encoder learns to cluster images of similar colors together, while under image recoloring the clustering is based on shape instead. }\label{fig:contrastive_transforms}
+% \vskip 0.5in
+% \vskip 0.5in
+\end{figure}   
 
-\paragraph{Preprint option}
-If you wish to post a preprint of your work online, e.g., on arXiv, using the
-NeurIPS style, please use the \verb+preprint+ option. This will create a
-nonanonymized version of your work with the text ``Preprint. Work in progress.''
-in the footer. This version may be distributed as you see fit, as long as you do not say which conference it was submitted to. Please \textbf{do
-  not} use the \verb+final+ option, which should \textbf{only} be used for
-papers accepted to NeurIPS.
+We also experiment with recoloring the shape in the original image to a different color as our transformation, and find that our encoder is able to learn to seperate images invariant of color and focus more on the image shape instead. As an inadvertent consequence however, we see that the encoder is also sensitive to orientation. See \ref{fig:contrastive_transforms} for reference.
 
+\section{Conclusion}
 
-At submission time, please omit the \verb+final+ and \verb+preprint+
-options. This will anonymize your submission and add line numbers to aid
-review. Please do \emph{not} refer to these line numbers in your paper as they
-will be removed during generation of camera-ready copies.
+\subsection{Insights}
+As a result of our experiments, we are able to successfully reproduce the experiments in \cite{foundationsCVbook}. Insights gained along this process include more direct experience in working with machine learning libraries, as well as the importance of introducing the right inductive biases within our model, whether that be in choices of archiecture or training objective. Through our experiments in autoencoders, we are able to demonstrate the effectiveness of neural data compression for efficent learning. Furthermore, through our experiments in contrastive learning, we are able to demonstrate that simple modifications in our loss is sufficent for our encoder to learn property-invariant features. We also gained insight into building effective transforms for enabling robust feature representations.
 
+\subsection{Workload}
+Our workload included generating the dataset, creating the autoencoder and contrastive learning encoder, iterative experimentation, generating visualizations, extending the experiments, and creating documentation and reports. All team members contributed evenly to most parts, however Shashank contributed moreso to the dataset creation and autoencoder, Kevin worked on both the autoencoder and contrastive learning, and Michael worked on the autoencoder and contrastive learning as well.
 
-The file \verb+neurips_2025.tex+ may be used as a ``shell'' for writing your
-paper. All you have to do is replace the author, title, abstract, and text of
-the paper with your own.
 
+\subsection{Key Challenges}
+Key challenges faced during this project include issues with trying to train the baseline MLP, which we found to be too weak despite multiple iterations. We also spent a lot of time trying to train the contrastive learning encoder using InfoNCE, but were unable to get consistent model convergence. As this varied depending on the random inialization and choice of batches, we believe that InfoNCE happened to provide very weak signal for gradient descent, and so was unable to train effectively. We also scrapped building our own autograd engine due to time limitations and the fact we believed it was not as valuable of a learning experience for machine learning directly.
 
-The formatting instructions contained in these style files are summarized in
-Sections \ref{gen_inst}, \ref{headings}, and \ref{others} below.
+\subsection{Final Remarks}
+We therefore found this project to be highly applicable into applying machine learning in the computer vision domain. We find the learning experience to be worthwhile and insightful, and identify numerous directions for continous improvement and learning. 
 
-
-\section{General formatting instructions}
-\label{gen_inst}
-
-
-The text must be confined within a rectangle 5.5~inches (33~picas) wide and
-9~inches (54~picas) long. The left margin is 1.5~inch (9~picas).  Use 10~point
-type with a vertical spacing (leading) of 11~points.  Times New Roman is the
-preferred typeface throughout, and will be selected for you by default.
-Paragraphs are separated by \nicefrac{1}{2}~line space (5.5 points), with no
-indentation.
-
-
-The paper title should be 17~point, initial caps/lower case, bold, centered
-between two horizontal rules. The top rule should be 4~points thick and the
-bottom rule should be 1~point thick. Allow \nicefrac{1}{4}~inch space above and
-below the title to rules. All pages should start at 1~inch (6~picas) from the
-top of the page.
-
-
-For the final version, authors' names are set in boldface, and each name is
-centered above the corresponding address. The lead author's name is to be listed
-first (left-most), and the co-authors' names (if different address) are set to
-follow. If there is only one co-author, list both author and co-author side by
-side.
-
-
-Please pay special attention to the instructions in Section \ref{others}
-regarding figures, tables, acknowledgments, and references.
-
-
-\section{Headings: first level}
-\label{headings}
-
-
-All headings should be lower case (except for first word and proper nouns),
-flush left, and bold.
-
-
-First-level headings should be in 12-point type.
-
-
-\subsection{Headings: second level}
-
-
-Second-level headings should be in 10-point type.
-
-
-\subsubsection{Headings: third level}
-
-
-Third-level headings should be in 10-point type.
-
-
-\paragraph{Paragraphs}
-
-
-There is also a \verb+\paragraph+ command available, which sets the heading in
-bold, flush left, and inline with the text, with the heading followed by 1\,em
-of space.
-
-
-\section{Citations, figures, tables, references}
-\label{others}
-
-
-These instructions apply to everyone.
-
-
-\subsection{Citations within the text}
-
-
-The \verb+natbib+ package will be loaded for you by default.  Citations may be
-author/year or numeric, as long as you maintain internal consistency.  As to the
-format of the references themselves, any style is acceptable as long as it is
-used consistently.
-
-
-The documentation for \verb+natbib+ may be found at
-\begin{center}
-  \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
-\end{center}
-Of note is the command \verb+\citet+, which produces citations appropriate for
-use in inline text.  For example,
-\begin{verbatim}
-   \citet{hasselmo} investigated\dots
-\end{verbatim}
-produces
-\begin{quote}
-  Hasselmo, et al.\ (1995) investigated\dots
-\end{quote}
-
-
-If you wish to load the \verb+natbib+ package with options, you may add the
-following before loading the \verb+neurips_2025+ package:
-\begin{verbatim}
-   \PassOptionsToPackage{options}{natbib}
-\end{verbatim}
-
-
-If \verb+natbib+ clashes with another package you load, you can add the optional
-argument \verb+nonatbib+ when loading the style file:
-\begin{verbatim}
-   \usepackage[nonatbib]{neurips_2025}
-\end{verbatim}
-
-
-As submission is double blind, refer to your own published work in the third
-person. That is, use ``In the previous work of Jones et al.\ [4],'' not ``In our
-previous work [4].'' If you cite your other papers that are not widely available
-(e.g., a journal paper under review), use anonymous author names in the
-citation, e.g., an author of the form ``A.\ Anonymous'' and include a copy of the anonymized paper in the supplementary material.
-
-
-\subsection{Footnotes}
-
-
-Footnotes should be used sparingly.  If you do require a footnote, indicate
-footnotes with a number\footnote{Sample of the first footnote.} in the
-text. Place the footnotes at the bottom of the page on which they appear.
-Precede the footnote with a horizontal rule of 2~inches (12~picas).
-
-
-Note that footnotes are properly typeset \emph{after} punctuation
-marks.\footnote{As in this example.}
-
-
-\subsection{Figures}
-
-
-\begin{figure}
-  \centering
-  \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-  \caption{Sample figure caption.}
-\end{figure}
-
-
-All artwork must be neat, clean, and legible. Lines should be dark enough for
-purposes of reproduction. The figure number and caption always appear after the
-figure. Place one line space before the figure caption and one line space after
-the figure. The figure caption should be lower case (except for first word and
-proper nouns); figures are numbered consecutively.
-
-
-You may use color figures.  However, it is best for the figure captions and the
-paper body to be legible if the paper is printed in either black/white or in
-color.
-
-
-\subsection{Tables}
-
-
-All tables must be centered, neat, clean and legible.  The table number and
-title always appear before the table.  See Table~\ref{sample-table}.
-
-
-Place one line space before the table title, one line space after the
-table title, and one line space after the table. The table title must
-be lower case (except for first word and proper nouns); tables are
-numbered consecutively.
-
-
-Note that publication-quality tables \emph{do not contain vertical rules.} We
-strongly suggest the use of the \verb+booktabs+ package, which allows for
-typesetting high-quality, professional tables:
-\begin{center}
-  \url{https://www.ctan.org/pkg/booktabs}
-\end{center}
-This package was used to typeset Table~\ref{sample-table}.
-
-
-\begin{table}
-  \caption{Sample table title}
-  \label{sample-table}
-  \centering
-  \begin{tabular}{lll}
-    \toprule
-    \multicolumn{2}{c}{Part}                   \\
-    \cmidrule(r){1-2}
-    Name     & Description     & Size ($\mu$m) \\
-    \midrule
-    Dendrite & Input terminal  & $\sim$100     \\
-    Axon     & Output terminal & $\sim$10      \\
-    Soma     & Cell body       & up to $10^6$  \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\subsection{Math}
-Note that display math in bare TeX commands will not create correct line numbers for submission. Please use LaTeX (or AMSTeX) commands for unnumbered display math. (You really shouldn't be using \$\$ anyway; see \url{https://tex.stackexchange.com/questions/503/why-is-preferable-to} and \url{https://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath} for more information.)
-
-\subsection{Final instructions}
-
-Do not change any aspects of the formatting parameters in the style files.  In
-particular, do not modify the width or length of the rectangle the text should
-fit into, and do not change font sizes (except perhaps in the
-\textbf{References} section; see below). Please note that pages should be
-numbered.
-
-
-\section{Preparing PDF files}
-
-
-Please prepare submission files with paper size ``US Letter,'' and not, for
-example, ``A4.''
-
-
-Fonts were the main cause of problems in the past years. Your PDF file must only
-contain Type 1 or Embedded TrueType fonts. Here are a few instructions to
-achieve this.
-
-
-\begin{itemize}
-
-
-\item You should directly generate PDF files using \verb+pdflatex+.
-
-
-\item You can check which fonts a PDF files uses.  In Acrobat Reader, select the
-  menu Files$>$Document Properties$>$Fonts and select Show All Fonts. You can
-  also use the program \verb+pdffonts+ which comes with \verb+xpdf+ and is
-  available out-of-the-box on most Linux machines.
-
-
-\item \verb+xfig+ "patterned" shapes are implemented with bitmap fonts.  Use
-  "solid" shapes instead.
-
-
-\item The \verb+\bbold+ package almost always uses bitmap fonts.  You should use
-  the equivalent AMS Fonts:
-\begin{verbatim}
-   \usepackage{amsfonts}
-\end{verbatim}
-followed by, e.g., \verb+\mathbb{R}+, \verb+\mathbb{N}+, or \verb+\mathbb{C}+
-for $\mathbb{R}$, $\mathbb{N}$ or $\mathbb{C}$.  You can also use the following
-workaround for reals, natural and complex:
-\begin{verbatim}
-   \newcommand{\RR}{I\!\!R} %real numbers
-   \newcommand{\Nat}{I\!\!N} %natural numbers
-   \newcommand{\CC}{I\!\!\!\!C} %complex numbers
-\end{verbatim}
-Note that \verb+amsfonts+ is automatically loaded by the \verb+amssymb+ package.
-
-
-\end{itemize}
-
-
-If your file contains type 3 fonts or non embedded TrueType fonts, we will ask
-you to fix it.
-
-
-\subsection{Margins in \LaTeX{}}
-
-
-Most of the margin problems come from figures positioned by hand using
-\verb+\special+ or other commands. We suggest using the command
-\verb+\includegraphics+ from the \verb+graphicx+ package. Always specify the
-figure width as a multiple of the line width as in the example below:
-\begin{verbatim}
-   \usepackage[pdftex]{graphicx} ...
-   \includegraphics[width=0.8\linewidth]{myfile.pdf}
-\end{verbatim}
-See Section 4.4 in the graphics bundle documentation
-(\url{http://mirrors.ctan.org/macros/latex/required/graphics/grfguide.pdf})
-
-
-A number of width problems arise when \LaTeX{} cannot properly hyphenate a
-line. Please give LaTeX hyphenation hints using the \verb+\-+ command when
-necessary.
-
-\begin{ack}
-Use unnumbered first level headings for the acknowledgments. All acknowledgments
-go at the end of the paper before the list of references. Moreover, you are required to declare
-funding (financial activities supporting the submitted work) and competing interests (related financial activities outside the submitted work).
-More information about this disclosure can be found at: \url{https://neurips.cc/Conferences/2025/PaperInformation/FundingDisclosure}.
-
-
-Do {\bf not} include this section in the anonymized submission, only in the final paper. You can use the \texttt{ack} environment provided in the style file to automatically hide this section in the anonymized submission.
-\end{ack}
-
-\section*{References}
+% \section*{References}
 
 \bibliography{sources}
 
@@ -477,10 +227,10 @@ Do {\bf not} include this section in the anonymized submission, only in the fina
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\appendix
+% \appendix
 
-\section{Technical Appendices and Supplementary Material}
-Technical appendices with additional results, figures, graphs and proofs may be submitted with the paper submission before the full submission deadline (see above), or as a separate PDF in the ZIP file below before the supplementary material deadline. There is no page limit for the technical appendices.
+% \section{Technical Appendices and Supplementary Material}
+% Technical appendices with additional results, figures, graphs and proofs may be submitted with the paper submission before the full submission deadline (see above), or as a separate PDF in the ZIP file below before the supplementary material deadline. There is no page limit for the technical appendices.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
