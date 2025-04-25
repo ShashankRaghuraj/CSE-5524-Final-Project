@@ -33,8 +33,9 @@ class ImageDataset(Dataset):
 
 
 def generate_autoencoder_output(input_image):
-    autoencoder = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE).to(device)
+    autoencoder = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE)
     autoencoder.load_state_dict(torch.load('autoencoder.pth'))
+    autoencoder = autoencoder.to(device)
     # Pick a random image from the dataset
     
     # Encode the image
@@ -74,8 +75,9 @@ if __name__ == '__main__':
         generate_autoencoder_output(image.to(device))
     elif command == 'create_animation':
         # Create an animation from the autoencoder
-        model = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE).to(device)
+        model = Autoencoder(INPUT_DIM, REPRESENTATION_SIZE)
         model.load_state_dict(torch.load('autoencoder.pth'))
+        model = model.to(device)
         # Pick 5 random images from the dataset
         indices = np.random.choice(len(dataset), 5, replace=False)
         images = [dataset[i].to(device) for i in indices]
@@ -83,13 +85,14 @@ if __name__ == '__main__':
         print("Animation saved to output_images/animation.gif")
     elif command == 'color_knn' or command == 'colorless_knn':
         if command == 'colorless_knn':
-            model = ContrastiveEncoder(INPUT_DIM, 32, None).to(device)
+            model = ContrastiveEncoder(INPUT_DIM, 32, None)
             model.load_state_dict(torch.load('colorless_encoder.pth'))
             output_filename = 'colorless_similar_images.png'
         else:
-            model = ContrastiveEncoder(INPUT_DIM, 2, None).to(device)
+            model = ContrastiveEncoder(INPUT_DIM, 2, None)
             model.load_state_dict(torch.load('color_contrastive_encoder.pth'))
             output_filename = 'color_similar_images.png'
+        model = model.to(device)
 
         # Pick 5 random images from the dataset
         indices = np.random.choice(len(dataset), 5, replace=False)
