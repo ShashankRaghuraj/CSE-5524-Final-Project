@@ -36,7 +36,7 @@ IMAGE_DIRECTORY = 'data/images'
 
 
 INPUT_DIM = IMAGE_SIZE * IMAGE_SIZE * 3
-REPRESENTATION_SIZE = 2 # Should increase to something like 32 if using 
+REPRESENTATION_SIZE = 2 # Should increase to something like 32 if using colorless encoder
 NUM_EPOCHS= 10
 
 # m value for the triplet loss
@@ -93,7 +93,7 @@ class ContrastiveEncoder(nn.Module):
             self.activation_fn(),
             nn.Conv2d(32, 32, kernel_size=3, stride=2, padding=1), # 128x4x4 => 128x2x2
             self.activation_fn(),
-            nn.Conv2d(32,REPRESENTATION_SIZE, kernel_size=2, padding = 0), # 128x2x2 => 2x1x1
+            nn.Conv2d(32,representation_dim, kernel_size=2, padding = 0), # 128x2x2 => 2x1x1
             nn.Flatten(), # 2x1x1 => 2
             nn.Tanh()
         )
@@ -160,7 +160,7 @@ def train_encoder(train_model : ContrastiveEncoder, data_loader : DataLoader, ep
 
 
 
-def find_most_similar(train_model : ContrastiveEncoder, data_loader : DataLoader, similar_to_images, num_images=5):
+def find_most_similar(train_model : ContrastiveEncoder, data_loader : DataLoader, similar_to_images, num_images=5, output_file="similar_images.png"):
     # find the n most similar images to image
     import matplotlib.pyplot as plt
     fig, axs = plt.subplots(len(similar_to_images), num_images + 1, figsize=(num_images * 2 + 2, len(similar_to_images) * 2))
@@ -197,9 +197,7 @@ def find_most_similar(train_model : ContrastiveEncoder, data_loader : DataLoader
                 axs[i,j + 1].imshow(images[j].permute(1, 2, 0).cpu().numpy())
                 axs[i,j + 1].axis('off')
             # Save the plot
-            if not os.path.exists("similar_images"):
-                os.makedirs("similar_images")
-            plt.savefig(f'similar_images/similar_images.png')
+            plt.savefig(output_file)
     
 
 

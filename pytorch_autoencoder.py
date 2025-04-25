@@ -168,7 +168,7 @@ def train_autoencoder(train_model : Autoencoder, data_loader : DataLoader, epoch
 
 
 # Function to create an animation from a list of images (keyframes) using the autoencoder
-def create_animation(model, images, num_frames=30):
+def create_animation(model, images, num_frames=30, output_file='animation.gif'):
     # Create a list of frames
     import imageio
     frames = []
@@ -191,7 +191,7 @@ def create_animation(model, images, num_frames=30):
                 # Save the frame
                 frames.append(decoded)
             
-    imageio.mimsave('animation.gif', frames, fps=20, loop=0)
+    imageio.mimsave(output_file, frames, fps=20, loop=0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

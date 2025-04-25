@@ -1,5 +1,21 @@
 # CSE-5524-Final-Project
 
+# FOR THE GRADERS
+
+Create a python virtual environment and activate it. 
+
+Run `pip install -r requirements.txt`.  
+
+We created a file called `grading_scripts.py` to show the output we generate. It contains 4 commands
+
+Run `python grading_scripts.py test_autoencoder` to pick a random image and show its output with our autoencoder  
+Run `python grading_scripts.py create_animation` to pick 5 random images and create an animation between them by interplating encodings with the autoencoder  
+Run `python grading_scripts.py color_knn` to find the 5 nearest neighbors in representation space to 5 random images using the contrastive encoder that was trained to only care about color  
+Run `python grading_scripts.py colorless_knn` to find the 5 nearest neighbors in representation space to 5 random images using the contrastive encoder that was trained to be invariant to color  
+
+
+# GENERAL, NOT FOR THE GRADERS
+
 ## How to use
 Create a python virtual environment and activate it.  
 

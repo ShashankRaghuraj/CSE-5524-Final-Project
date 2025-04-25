@@ -72,7 +72,7 @@ models/
 *.h5
 *.pkl
 *.pt
-*.pth
+# *.pth
 *.onnx
 *.tflite
 *.pb
@@ -100,5 +100,7 @@ temp/
 *.synctex.gz
 
 similar_images
+similar_images.png
 encoder_output
 decoder_output
+output_images
