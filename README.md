@@ -13,6 +13,8 @@ Run `python grading_scripts.py create_animation` to pick 5 random images and cre
 Run `python grading_scripts.py color_knn` to find the 5 nearest neighbors in representation space to 5 random images using the contrastive encoder that was trained to only care about color  
 Run `python grading_scripts.py colorless_knn` to find the 5 nearest neighbors in representation space to 5 random images using the contrastive encoder that was trained to be invariant to color  
 
+All outputs are saved in the folder `output_images`
+
 
 # GENERAL, NOT FOR THE GRADERS
 
